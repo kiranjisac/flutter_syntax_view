@@ -25,7 +25,11 @@ class SyntaxView extends StatefulWidget {
 class SyntaxViewState extends State<SyntaxView> {
   /// Zoom Controls
   double textScaleFactor = 1.0;
-
+  //my making
+  final double _basefontSize = 12;
+  double _fontSize = 12;
+  double _fontScale = 1.0;
+  double _baseFontScale = 1.0;
   @override
   Widget build(BuildContext context) {
     assert(widget.code != null,
@@ -34,49 +38,61 @@ class SyntaxViewState extends State<SyntaxView> {
         "Syntax must not be null. select a Syntax by calling Syntax.(Language)");
 
     final int numLines = (widget.withLinesCount ?? true)
-        ? '\n'.allMatches(widget.code).length + 1
+        ? '\n'.allMatches(widget.code).length
         : 0;
 
     return Stack(alignment: AlignmentDirectional.bottomEnd, children: <Widget>[
       Container(
           padding: (widget.withLinesCount ?? true)
-              ? EdgeInsets.only(left: 5, top: 10, right: 10, bottom: 10)
-              : EdgeInsets.all(10),
+              ? EdgeInsets.only(left: 0, top: 0, right: 0, bottom: 0)
+              : EdgeInsets.only(left: 0, top: 0),
           color: (widget.syntaxTheme ?? SyntaxTheme.dracula()).backgroundColor,
           constraints: BoxConstraints.expand(),
           child: Scrollbar(
               child: SingleChildScrollView(
                   child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      child:
+                      child: GestureDetector(
+                          onScaleStart: (ScaleStartDetails scaleStartDetails) {
+                            _baseFontScale = _fontScale;
+                          },
+                          onScaleUpdate:
+                              (ScaleUpdateDetails scaleUpdateDetails) {
+                            setState(() {
+                              _fontScale =
+                                  (_baseFontScale * scaleUpdateDetails.scale)
+                                      .clamp(0.6, 3);
+                              _fontSize = _fontScale * _basefontSize;
+                            });
+                          },
 
                           /// Lines Count in the left with Code view
-                          (widget.withLinesCount ?? true)
+                          child: (widget.withLinesCount ?? true)
                               ? Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     Column(children: <Widget>[
-                                      for (int i = 1; i <= numLines; i++)
+                                      for (int i = 0; i <= numLines; i++)
                                         RichText(
                                             textScaleFactor: textScaleFactor,
                                             text: TextSpan(
                                                 style: TextStyle(
                                                     fontFamily: 'monospace',
-                                                    fontSize: 12.0,
+                                                    fontSize: _fontSize,
                                                     color:
                                                         (widget.syntaxTheme ??
                                                                 SyntaxTheme
                                                                     .dracula())
                                                             .linesCountColor),
-                                                text: "$i"))
+                                                text:(i==0)?"": "$i"))
                                     ]),
-                                    VerticalDivider(width: 5),
+                                    VerticalDivider(width: 1),
                                     RichText(
                                       textScaleFactor: textScaleFactor,
                                       text: TextSpan(
                                         style: TextStyle(
                                             fontFamily: 'monospace',
-                                            fontSize: 12.0),
+                                            fontSize: _fontSize),
                                         children: <TextSpan>[
                                           getSyntax(widget.syntax,
                                                   widget.syntaxTheme)
@@ -94,14 +110,14 @@ class SyntaxViewState extends State<SyntaxView> {
                                   text: TextSpan(
                                     style: TextStyle(
                                         fontFamily: 'monospace',
-                                        fontSize: 12.0),
+                                        fontSize: _fontSize),
                                     children: <TextSpan>[
                                       getSyntax(
                                               widget.syntax, widget.syntaxTheme)
                                           .format(widget.code)
                                     ],
                                   ),
-                                ))))),
+                                )))))),
 
       /// Zoom Controls
       if (widget.withZoom ?? false)
